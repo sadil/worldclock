@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>World Clock PWA</title>
-
+  
   <!-- PWA Manifest & Icons -->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2784/2784459.png">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2784/2784459.png">
-
+  
   <!-- Theme Colors -->
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -42,7 +42,7 @@
       </div>
       <div id="searchPageList"></div>
     </div>
-
+    
     <button class="nav-btn" id="btnToDash">OPEN DASHBOARD</button>
   </div>
 
@@ -88,12 +88,8 @@
 
   <div class="toast" id="toast">Location Added</div>
 
-  <!-- Install Button (Hidden by default) -->
-  <button id="installBtn" class="install-float" style="display:none;">↓ Install App</button>
-
   <script src="app.js"></script>
   <script>
-    // Register Service Worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js')
         .then(() => console.log('Service Worker Registered'));
