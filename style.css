@@ -155,11 +155,3 @@ button.btn-search {
   background: var(--accent); color: #000; padding: 10px 20px;
   border-radius: 20px; font-weight: bold; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 300;
 }
-
-.install-float {
-  position: fixed; bottom: 20px; right: 20px;
-  background: var(--text-main); color: var(--bg);
-  border: none; padding: 10px 20px; border-radius: 30px;
-  font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-  z-index: 1000;
-}
