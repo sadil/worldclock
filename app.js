@@ -1,7 +1,6 @@
 // State
 let myLocations = [];
 let clockInterval = null;
-let deferredPrompt; // For install prompt
 
 let appSettings = {
   szCity: 1.8, szCountry: 0.9, szTime: 2.8, szDate: 1.1, dateFormat: 'std'
@@ -17,16 +16,10 @@ window.addEventListener('load', () => {
 
   // Bind UI Elements
   bindEvents();
-
+  
   // Apply Settings
   applySettingsStyles();
   renderSearchPageList();
-
-  // Check location to decide page
-  if (myLocations.length > 0) {
-    // Optional: Auto-go to dashboard?
-    // keeping user on search page for now as requested previously
-  }
 });
 
 // --- EVENT BINDING ---
@@ -41,31 +34,14 @@ function bindEvents() {
     if(e.key === 'Enter') runSearch();
   });
 
-    // Settings
-    ['setCity', 'setTime', 'setDate'].forEach(id => {
-      document.getElementById(id).value = appSettings[id === 'setCity' ? 'szCity' : id === 'setTime' ? 'szTime' : 'szDate'];
-      document.getElementById(id).addEventListener('input', updatePreview);
-    });
-
-    document.getElementById('setDateFormat').value = appSettings.dateFormat;
-    document.getElementById('setDateFormat').addEventListener('change', updatePreview);
-
-    // PWA Install
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      const btn = document.getElementById('installBtn');
-      btn.style.display = 'block';
-      btn.addEventListener('click', () => {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            btn.style.display = 'none';
-          }
-          deferredPrompt = null;
-        });
-      });
-    });
+  // Settings
+  ['setCity', 'setTime', 'setDate'].forEach(id => {
+    document.getElementById(id).value = appSettings[id === 'setCity' ? 'szCity' : id === 'setTime' ? 'szTime' : 'szDate'];
+    document.getElementById(id).addEventListener('input', updatePreview);
+  });
+  
+  document.getElementById('setDateFormat').value = appSettings.dateFormat;
+  document.getElementById('setDateFormat').addEventListener('change', updatePreview);
 }
 
 // --- LOGIC ---
@@ -75,7 +51,7 @@ async function runSearch() {
 
   const loader = document.getElementById('loader');
   const box = document.getElementById('resultsBox');
-
+  
   loader.style.display = 'block';
   box.style.display = 'none';
 
@@ -83,7 +59,7 @@ async function runSearch() {
     const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=10&language=en&format=json`;
     const response = await fetch(url);
     const json = await response.json();
-
+    
     loader.style.display = 'none';
     box.innerHTML = '';
 
@@ -98,13 +74,13 @@ async function runSearch() {
       const div = document.createElement('div');
       div.className = 'result-row';
       div.innerHTML = `<div class="r-name">${item.name}</div><div class="r-sub">${item.admin1 || ''}, ${item.country || ''}</div>`;
-
+      
       const locObj = {
         name: item.name,
         country: item.country || "Unknown",
         zone: item.timezone || "UTC"
       };
-
+      
       div.onclick = () => {
         addLocation(locObj);
         box.style.display='none';
@@ -141,7 +117,7 @@ function renderSearchPageList() {
   const list = document.getElementById('searchPageList');
   document.getElementById('listCount').textContent = myLocations.length;
   list.innerHTML = '';
-
+  
   if(myLocations.length === 0) {
     list.innerHTML = '<div style="padding:20px; color:#666; font-style:italic;">No cities selected.</div>';
     return;
@@ -151,11 +127,11 @@ function renderSearchPageList() {
     const div = document.createElement('div');
     div.className = 'saved-item';
     div.innerHTML = `
-    <div>
-    <div style="font-weight:bold; color:var(--text-main);">${loc.name}</div>
-    <div style="font-size:0.8em; color:var(--text-sub);">${loc.country}</div>
-    </div>
-    <span class="remove-link" onclick="removeLocation(${idx})">✖</span>
+      <div>
+         <div style="font-weight:bold; color:var(--text-main);">${loc.name}</div>
+         <div style="font-size:0.8em; color:var(--text-sub);">${loc.country}</div>
+      </div>
+      <span class="remove-link" onclick="removeLocation(${idx})">✖</span>
     `;
     list.appendChild(div);
   });
@@ -189,22 +165,22 @@ function renderGrid() {
     grid.innerHTML = `<div style="text-align:center; color:#666; grid-column:1/-1; padding:40px;">No cities selected.</div>`;
     return;
   }
-
+  
   myLocations.forEach((loc, idx) => {
     const card = document.createElement('div');
     card.className = 'clock-card';
     card.innerHTML = `
-    <div class="card-controls">
-    <div class="ctrl-grp">
-    <button class="ctrl-btn" onclick="moveCard(${idx}, -1)">&larr;</button>
-    <button class="ctrl-btn" onclick="moveCard(${idx}, 1)">&rarr;</button>
-    </div>
-    <div class="ctrl-grp"><button class="ctrl-btn btn-del" onclick="deleteCard(${idx})">✖</button></div>
-    </div>
-    <div class="clock-city">${loc.name}</div>
-    <div class="clock-country">${loc.country}</div>
-    <div class="clock-time" id="t-${idx}">--:--</div>
-    <div class="clock-date" id="d-${idx}">Loading</div>
+      <div class="card-controls">
+        <div class="ctrl-grp">
+          <button class="ctrl-btn" onclick="moveCard(${idx}, -1)">&larr;</button>
+          <button class="ctrl-btn" onclick="moveCard(${idx}, 1)">&rarr;</button>
+        </div>
+        <div class="ctrl-grp"><button class="ctrl-btn btn-del" onclick="deleteCard(${idx})">✖</button></div>
+      </div>
+      <div class="clock-city">${loc.name}</div>
+      <div class="clock-country">${loc.country}</div>
+      <div class="clock-time" id="t-${idx}">--:--</div>
+      <div class="clock-date" id="d-${idx}">Loading</div>
     `;
     grid.appendChild(card);
   });
@@ -237,7 +213,7 @@ function startTicker() {
 function updateClocks() {
   const now = new Date();
   let dateOpts = { weekday: 'short', month: 'short', day: 'numeric' };
-
+  
   switch(appSettings.dateFormat) {
     case 'full': dateOpts = { weekday: 'long', month: 'long', day: 'numeric' }; break;
     case 'us': dateOpts = { year: 'numeric', month: '2-digit', day: '2-digit' }; break;
@@ -251,17 +227,17 @@ function updateClocks() {
     const dEl = document.getElementById(`d-${idx}`);
     if(tEl && dEl) {
       try {
-        tEl.textContent = new Intl.DateTimeFormat('en-US', {
-          hour:'2-digit', minute:'2-digit', hour12:false, timeZone: loc.zone
+        tEl.textContent = new Intl.DateTimeFormat('en-US', { 
+          hour:'2-digit', minute:'2-digit', hour12:false, timeZone: loc.zone 
         }).format(now);
-
+        
         if (appSettings.dateFormat === 'intl') {
-          dEl.textContent = new Intl.DateTimeFormat('en-CA', {
-            year:'numeric', month:'2-digit', day:'2-digit', timeZone: loc.zone
+          dEl.textContent = new Intl.DateTimeFormat('en-CA', { 
+            year:'numeric', month:'2-digit', day:'2-digit', timeZone: loc.zone 
           }).format(now);
         } else {
-          dEl.textContent = new Intl.DateTimeFormat('en-US', {
-            ...dateOpts, timeZone: loc.zone
+          dEl.textContent = new Intl.DateTimeFormat('en-US', { 
+            ...dateOpts, timeZone: loc.zone 
           }).format(now);
         }
       } catch(e) { tEl.textContent = "--:--"; }
@@ -275,7 +251,7 @@ function updatePreview() {
   appSettings.szTime = document.getElementById('setTime').value;
   appSettings.szDate = document.getElementById('setDate').value;
   appSettings.dateFormat = document.getElementById('setDateFormat').value;
-
+  
   localStorage.setItem('om_settings', JSON.stringify(appSettings));
   applySettingsStyles();
   updateClocks();
