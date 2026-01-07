@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>World Clock PWA</title>
+
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2784/2784459.png">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2784/2784459.png">
+
+  <!-- Theme Colors -->
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Fonts & Styles -->
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- PAGE 1: SEARCH -->
+  <div id="page-search">
+    <h1>World Clock</h1>
+    <div style="color:var(--text-sub)">Search cities and build your list.</div>
+
+    <div class="search-box-container">
+      <div class="input-wrapper">
+        <input type="text" id="searchInput" placeholder="City Name..." autocomplete="off">
+        <button class="btn-search" id="btnSearch">FIND</button>
+      </div>
+      <div class="loading-text" id="loader">Searching...</div>
+      <div class="search-results" id="resultsBox"></div>
+    </div>
+
+    <div class="selection-area">
+      <div class="list-header">
+        <span>Selected Cities</span>
+        <span id="listCount">0</span>
+      </div>
+      <div id="searchPageList"></div>
+    </div>
+
+    <button class="nav-btn" id="btnToDash">OPEN DASHBOARD</button>
+  </div>
+
+  <!-- PAGE 2: DASHBOARD -->
+  <div id="page-dashboard">
+    <div class="dash-header">
+      <div style="font-weight:bold; font-size:1.2rem; letter-spacing:1px;">MY WORLD CLOCK</div>
+      <button class="btn-icon" id="btnToSearch"><span>&larr; List</span></button>
+    </div>
+
+    <!-- SETTINGS -->
+    <details class="settings-panel">
+      <summary>Customize View</summary>
+      <div class="settings-grid">
+        <div class="setting-item">
+          <label>City Size</label>
+          <input type="range" min="1.0" max="4.0" step="0.1" id="setCity">
+        </div>
+        <div class="setting-item">
+          <label>Time Size</label>
+          <input type="range" min="1.5" max="6.0" step="0.1" id="setTime">
+        </div>
+        <div class="setting-item">
+          <label>Date Size</label>
+          <input type="range" min="0.8" max="3.0" step="0.1" id="setDate">
+        </div>
+        <div class="setting-item">
+          <label>Date Format</label>
+          <select id="setDateFormat">
+            <option value="std">Mon, Dec 07</option>
+            <option value="full">Monday, December 7</option>
+            <option value="us">12/07/2025</option>
+            <option value="intl">2025-12-07</option>
+            <option value="short">7 Dec</option>
+            <option value="day">Sunday</option>
+          </select>
+        </div>
+      </div>
+    </details>
+
+    <div class="grid" id="clockGrid"></div>
+  </div>
+
+  <div class="toast" id="toast">Location Added</div>
+
+  <!-- Install Button (Hidden by default) -->
+  <button id="installBtn" class="install-float" style="display:none;">↓ Install App</button>
+
+  <script src="app.js"></script>
+  <script>
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(() => console.log('Service Worker Registered'));
+    }
+  </script>
+</body>
+</html>
