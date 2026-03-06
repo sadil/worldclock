@@ -3,21 +3,202 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>World Clock PWA</title>
+  <title>World Clock Dashboard</title>
   
-  <!-- PWA Manifest & Icons -->
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2784/2784459.png">
-  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2784/2784459.png">
-  
-  <!-- Theme Colors -->
+  <!-- Mobile App Meta Tags (Pseudo-PWA) -->
   <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2784/2784459.png">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2784/2784459.png">
 
-  <!-- Fonts & Styles -->
+  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  
+  <style>
+    :root {
+      /* Theme Colors */
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --input-bg: #334155;
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      --accent: #38bdf8;
+      --danger: #ef4444;
+
+      /* Defaults - overridden by JS */
+      --scale: 1; 
+      --sz-city: 1.8rem;
+      --sz-country: 0.9rem;
+      --sz-time: 2.8rem;
+      --sz-date: 1.1rem;
+      --card-pad: 20px;
+      --card-min-w: 280px; /* Controls grid density */
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      margin: 0; padding: 0;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      overscroll-behavior-y: none;
+    }
+
+    /* --- PAGE 1: SEARCH --- */
+    #page-search {
+      max-width: 800px; margin: 0 auto; padding: 40px 20px;
+      width: 100%; text-align: center;
+      display: flex; flex-direction: column; gap: 30px;
+    }
+
+    h1 { font-weight: 300; letter-spacing: 2px; text-transform: uppercase; margin: 0; }
+
+    .search-box-container {
+      position: relative; background: var(--card-bg); padding: 20px;
+      border-radius: 12px; border: 1px solid #334155;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3); z-index: 100;
+    }
+
+    .input-wrapper { display: flex; gap: 10px; }
+
+    input[type="text"] {
+      flex: 1; padding: 16px; background: var(--input-bg);
+      border: 1px solid #475569; color: white; border-radius: 8px;
+      font-size: 1.1rem; appearance: none;
+    }
+    input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+    button.btn-search {
+      padding: 0 20px; background: var(--input-bg); border: 1px solid #475569;
+      color: white; border-radius: 8px; font-weight: 600; cursor: pointer;
+    }
+    button.btn-search:hover { background: #475569; }
+
+    .loading-text { display: none; margin-top: 10px; color: var(--accent); }
+
+    .search-results {
+      background: #28364d; border-radius: 0 0 8px 8px;
+      max-height: 200px; overflow-y: auto; margin-top: 10px; text-align: left;
+      position: absolute; left: 20px; right: 20px; z-index: 200;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: none;
+    }
+
+    .result-row { padding: 12px 15px; border-bottom: 1px solid #334155; cursor: pointer; }
+    .result-row:hover { background: var(--accent); color: #000; }
+    .r-name { font-weight: bold; }
+    .r-sub { font-size: 0.85em; color: var(--text-sub); }
+
+    .selection-area {
+      background: var(--card-bg); border-radius: 12px; border: 1px solid #334155;
+      display: flex; flex-direction: column; text-align: left;
+      max-height: 400px; overflow-y: auto;
+    }
+
+    .list-header {
+      padding: 15px; background: rgba(14, 165, 233, 0.1);
+      border-bottom: 1px solid #334155; font-weight: bold; color: var(--accent);
+      display: flex; justify-content: space-between;
+    }
+
+    .saved-item {
+      padding: 12px 20px; border-bottom: 1px solid #334155;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .remove-link { color: var(--danger); cursor: pointer; font-size: 1.2rem; padding: 5px; }
+
+    .nav-btn {
+      padding: 15px 40px; background: var(--accent); color: #000;
+      font-weight: 800; font-size: 1.2rem; border: none; border-radius: 8px;
+      cursor: pointer; width: 100%; transition: transform 0.1s;
+    }
+    .nav-btn:hover { transform: scale(1.02); }
+
+    /* --- PAGE 2: DASHBOARD --- */
+    #page-dashboard { display: none; padding: 20px; }
+
+    .dash-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; max-width: 1600px; margin-left: auto; margin-right: auto;
+    }
+
+    .btn-icon {
+      background: transparent; border: 1px solid var(--text-sub); color: var(--text-sub);
+      padding: 8px 12px; border-radius: 4px; cursor: pointer;
+    }
+    .btn-icon:hover { border-color: var(--text-main); color: var(--text-main); }
+
+    .settings-panel {
+      background: #151e2e; border: 1px solid #334155; border-radius: 8px;
+      padding: 15px; margin: 0 auto 30px auto; max-width: 1600px;
+    }
+    .settings-panel summary { cursor: pointer; font-weight: 600; color: var(--accent); outline: none; }
+    
+    .settings-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px; margin-top: 15px; padding-top: 15px;
+    }
+    
+    .setting-item label { display: block; font-size: 0.7em; color: var(--text-sub); margin-bottom: 8px; text-transform: uppercase; }
+    .setting-item input[type="range"] { width: 100%; cursor: pointer; }
+    .setting-item select { width: 100%; padding: 8px; background: var(--input-bg); border: 1px solid #475569; color: white; }
+
+    /* DYNAMIC GRID SYSTEM */
+    .grid {
+      display: grid; 
+      /* The minmax logic allows cards to shrink to fit more per row based on scale */
+      grid-template-columns: repeat(auto-fill, minmax(var(--card-min-w), 1fr));
+      gap: 15px; width: 100%; max-width: 1600px; margin: 0 auto;
+    }
+
+    .clock-card {
+      background: var(--card-bg); border-radius: 12px; 
+      padding: var(--card-pad);
+      text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      border: 1px solid #334155; position: relative;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+
+    .card-controls {
+      position: absolute; top: 5px; right: 5px; left: 5px;
+      display: flex; justify-content: space-between; opacity: 1; z-index: 10;
+    }
+    @media(hover: hover) {
+      .card-controls { opacity: 0; transition: opacity 0.2s; }
+      .clock-card:hover .card-controls { opacity: 1; }
+    }
+
+    .ctrl-grp { display: flex; gap: 3px; background: rgba(0,0,0,0.7); border-radius: 4px; padding: 2px; }
+    .ctrl-btn { background: transparent; border: none; color: #fff; cursor: pointer; padding: 4px 6px; font-weight: bold; font-size: 0.9em; }
+    .btn-del { color: var(--danger); }
+
+    /* TYPOGRAPHY SCALING */
+    .clock-city { 
+      font-size: var(--sz-city); font-weight: 800; color: var(--text-main); 
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+      margin-top: 8px; 
+    }
+    .clock-country { 
+      font-size: var(--sz-country); color: var(--text-sub); text-transform: uppercase; 
+      margin-bottom: 10px; letter-spacing: 0.5px; line-height: 1.2;
+    }
+    .clock-time { 
+      font-family: 'JetBrains Mono', monospace; font-size: var(--sz-time); 
+      font-weight: 700; color: var(--accent); line-height: 1; margin-bottom: 5px; 
+      font-variant-numeric: tabular-nums; 
+    }
+    .clock-date { font-size: var(--sz-date); color: var(--text-main); opacity: 0.8; }
+
+    .toast {
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+      background: var(--accent); color: #000; padding: 10px 20px;
+      border-radius: 20px; font-weight: bold; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 300;
+    }
+  </style>
 </head>
 <body>
 
@@ -57,17 +238,24 @@
     <details class="settings-panel">
       <summary>Customize View</summary>
       <div class="settings-grid">
+        
+        <!-- MASTER SCALE -->
+        <div class="setting-item" style="grid-column: 1 / -1; border-bottom: 1px solid #334155; padding-bottom: 15px; margin-bottom: 5px;">
+          <label style="color:var(--accent); font-weight:bold; font-size:0.9em;">Overall Card Size (Zoom)</label>
+          <input type="range" min="0.4" max="1.5" step="0.1" id="setCardScale">
+        </div>
+
         <div class="setting-item">
-          <label>City Size</label>
-          <input type="range" min="1.0" max="4.0" step="0.1" id="setCity">
+          <label>City Font</label>
+          <input type="range" min="1.0" max="3.0" step="0.1" id="setCity">
         </div>
         <div class="setting-item">
-          <label>Time Size</label>
-          <input type="range" min="1.5" max="6.0" step="0.1" id="setTime">
+          <label>Time Font</label>
+          <input type="range" min="1.0" max="5.0" step="0.1" id="setTime">
         </div>
         <div class="setting-item">
-          <label>Date Size</label>
-          <input type="range" min="0.8" max="3.0" step="0.1" id="setDate">
+          <label>Date Font</label>
+          <input type="range" min="0.6" max="2.0" step="0.1" id="setDate">
         </div>
         <div class="setting-item">
           <label>Date Format</label>
@@ -88,11 +276,226 @@
 
   <div class="toast" id="toast">Location Added</div>
 
-  <script src="app.js"></script>
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js')
-        .then(() => console.log('Service Worker Registered'));
+    // --- STATE ---
+    let myLocations = [];
+    let clockInterval = null;
+
+    let appSettings = {
+      cardScale: 1.0,
+      szCity: 1.8, 
+      szTime: 2.8, 
+      szDate: 1.1, 
+      dateFormat: 'std'
+    };
+
+    // --- INIT ---
+    window.addEventListener('load', () => {
+      const savedLocs = localStorage.getItem('om_locations');
+      if (savedLocs) myLocations = JSON.parse(savedLocs);
+
+      const savedSettings = localStorage.getItem('om_settings');
+      if (savedSettings) appSettings = { ...appSettings, ...JSON.parse(savedSettings) };
+
+      bindEvents();
+      applySettingsStyles();
+      renderSearchPageList();
+    });
+
+    // --- BINDING ---
+    function bindEvents() {
+      document.getElementById('btnToDash').onclick = goToDashboard;
+      document.getElementById('btnToSearch').onclick = goToSearch;
+      document.getElementById('btnSearch').onclick = runSearch;
+      document.getElementById('searchInput').addEventListener('keydown', (e) => { if(e.key === 'Enter') runSearch(); });
+
+      // Link Settings Inputs
+      const inputs = ['setCity', 'setTime', 'setDate', 'setCardScale'];
+      inputs.forEach(id => {
+        const key = id === 'setCardScale' ? 'cardScale' : (id === 'setCity' ? 'szCity' : id === 'setTime' ? 'szTime' : 'szDate');
+        const el = document.getElementById(id);
+        if(el) {
+          el.value = appSettings[key];
+          el.addEventListener('input', updatePreview);
+        }
+      });
+      
+      const fmt = document.getElementById('setDateFormat');
+      if(fmt) {
+        fmt.value = appSettings.dateFormat;
+        fmt.addEventListener('change', updatePreview);
+      }
+    }
+
+    // --- API SEARCH ---
+    async function runSearch() {
+      const q = document.getElementById('searchInput').value.trim();
+      if(!q) return;
+      const loader = document.getElementById('loader');
+      const box = document.getElementById('resultsBox');
+      loader.style.display = 'block'; box.style.display = 'none';
+
+      try {
+        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=10&language=en&format=json`;
+        const response = await fetch(url);
+        const json = await response.json();
+        loader.style.display = 'none'; box.innerHTML = '';
+
+        if (!json.results) { loader.textContent = "No cities found."; loader.style.display = 'block'; return; }
+        box.style.display = 'block';
+
+        json.results.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'result-row';
+          div.innerHTML = `<div class="r-name">${item.name}</div><div class="r-sub">${item.admin1 || ''}, ${item.country || ''}</div>`;
+          const locObj = { name: item.name, country: item.country || "Unknown", zone: item.timezone || "UTC" };
+          div.onclick = () => { addLocation(locObj); box.style.display='none'; document.getElementById('searchInput').value = ''; showToast(`Added ${item.name}`); };
+          box.appendChild(div);
+        });
+      } catch (err) { loader.textContent = "Error searching."; }
+    }
+
+    function addLocation(loc) {
+      const exists = myLocations.some(l => l.name === loc.name && l.country === loc.country);
+      if(!exists) {
+        myLocations.push(loc);
+        localStorage.setItem('om_locations', JSON.stringify(myLocations));
+        renderSearchPageList();
+      } else { showToast("Already added!"); }
+    }
+
+    function removeLocation(idx) {
+      myLocations.splice(idx, 1);
+      localStorage.setItem('om_locations', JSON.stringify(myLocations));
+      renderSearchPageList();
+    }
+
+    function renderSearchPageList() {
+      const list = document.getElementById('searchPageList');
+      document.getElementById('listCount').textContent = myLocations.length;
+      list.innerHTML = '';
+      if(myLocations.length === 0) { list.innerHTML = '<div style="padding:20px; color:#666; font-style:italic;">No cities selected.</div>'; return; }
+      myLocations.forEach((loc, idx) => {
+        const div = document.createElement('div');
+        div.className = 'saved-item';
+        div.innerHTML = `<div><div style="font-weight:bold; color:var(--text-main);">${loc.name}</div><div style="font-size:0.8em; color:var(--text-sub);">${loc.country}</div></div><span class="remove-link" onclick="removeLocation(${idx})">✖</span>`;
+        list.appendChild(div);
+      });
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.style.opacity = '1';
+      setTimeout(() => t.style.opacity = '0', 2000);
+    }
+
+    // --- DASHBOARD ---
+    function goToDashboard() {
+      document.getElementById('page-search').style.display = 'none';
+      document.getElementById('page-dashboard').style.display = 'block';
+      renderGrid(); startTicker();
+    }
+    function goToSearch() {
+      if(clockInterval) clearInterval(clockInterval);
+      document.getElementById('page-dashboard').style.display = 'none';
+      document.getElementById('page-search').style.display = 'flex';
+      renderSearchPageList();
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('clockGrid');
+      grid.innerHTML = '';
+      if (myLocations.length === 0) { grid.innerHTML = `<div style="text-align:center; color:#666; grid-column:1/-1; padding:40px;">No cities selected.</div>`; return; }
+      myLocations.forEach((loc, idx) => {
+        const card = document.createElement('div');
+        card.className = 'clock-card';
+        card.innerHTML = `
+          <div class="card-controls">
+            <div class="ctrl-grp"><button class="ctrl-btn" onclick="moveCard(${idx}, -1)">&larr;</button><button class="ctrl-btn" onclick="moveCard(${idx}, 1)">&rarr;</button></div>
+            <div class="ctrl-grp"><button class="ctrl-btn btn-del" onclick="deleteCard(${idx})">✖</button></div>
+          </div>
+          <div class="clock-city">${loc.name}</div>
+          <div class="clock-country">${loc.country}</div>
+          <div class="clock-time" id="t-${idx}">--:--</div>
+          <div class="clock-date" id="d-${idx}">Loading</div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function moveCard(idx, dir) {
+      if ((dir === -1 && idx === 0) || (dir === 1 && idx === myLocations.length - 1)) return;
+      const temp = myLocations[idx];
+      myLocations[idx] = myLocations[idx + dir];
+      myLocations[idx + dir] = temp;
+      localStorage.setItem('om_locations', JSON.stringify(myLocations));
+      renderGrid(); updateClocks();
+    }
+
+    function deleteCard(idx) {
+      if(confirm(`Remove ${myLocations[idx].name}?`)) {
+        myLocations.splice(idx, 1);
+        localStorage.setItem('om_locations', JSON.stringify(myLocations));
+        renderGrid(); updateClocks();
+      }
+    }
+
+    // --- CLOCK TICKER ---
+    function startTicker() {
+      if(clockInterval) clearInterval(clockInterval);
+      updateClocks();
+      clockInterval = setInterval(updateClocks, 1000);
+    }
+
+    function updateClocks() {
+      const now = new Date();
+      let dateOpts = { weekday: 'short', month: 'short', day: 'numeric' };
+      switch(appSettings.dateFormat) {
+        case 'full': dateOpts = { weekday: 'long', month: 'long', day: 'numeric' }; break;
+        case 'us': dateOpts = { year: 'numeric', month: '2-digit', day: '2-digit' }; break;
+        case 'intl': dateOpts = { year: 'numeric', month: '2-digit', day: '2-digit' }; break;
+        case 'short': dateOpts = { day: 'numeric', month: 'short' }; break;
+        case 'day': dateOpts = { weekday: 'long' }; break;
+      }
+      myLocations.forEach((loc, idx) => {
+        const tEl = document.getElementById(`t-${idx}`);
+        const dEl = document.getElementById(`d-${idx}`);
+        if(tEl && dEl) {
+          try {
+            tEl.textContent = new Intl.DateTimeFormat('en-US', { hour:'2-digit', minute:'2-digit', hour12:false, timeZone: loc.zone }).format(now);
+            if (appSettings.dateFormat === 'intl') {
+              dEl.textContent = new Intl.DateTimeFormat('en-CA', { year:'numeric', month:'2-digit', day:'2-digit', timeZone: loc.zone }).format(now);
+            } else {
+              dEl.textContent = new Intl.DateTimeFormat('en-US', { ...dateOpts, timeZone: loc.zone }).format(now);
+            }
+          } catch(e) { tEl.textContent = "--:--"; }
+        }
+      });
+    }
+
+    // --- SETTINGS ---
+    function updatePreview() {
+      appSettings.cardScale = parseFloat(document.getElementById('setCardScale').value) || 1.0;
+      appSettings.szCity = parseFloat(document.getElementById('setCity').value);
+      appSettings.szTime = parseFloat(document.getElementById('setTime').value);
+      appSettings.szDate = parseFloat(document.getElementById('setDate').value);
+      appSettings.dateFormat = document.getElementById('setDateFormat').value;
+      localStorage.setItem('om_settings', JSON.stringify(appSettings));
+      applySettingsStyles(); updateClocks();
+    }
+
+    function applySettingsStyles() {
+      const root = document.documentElement;
+      const s = appSettings.cardScale;
+
+      root.style.setProperty('--sz-city', (appSettings.szCity * s) + 'rem');
+      root.style.setProperty('--sz-country', (appSettings.szCity * 0.5 * s) + 'rem');
+      root.style.setProperty('--sz-time', (appSettings.szTime * s) + 'rem');
+      root.style.setProperty('--sz-date', (appSettings.szDate * s) + 'rem');
+      
+      const minW = Math.max(140, 280 * s); 
+      root.style.setProperty('--card-min-w', minW + 'px');
+      root.style.setProperty('--card-pad', (20 * s) + 'px');
     }
   </script>
 </body>
